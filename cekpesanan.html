@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cek Status Pesanan - Toko Nusa Indah</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #d1cfc9;
+            color: #160202;
+            font-size: 14px;
+        }
+        header {
+            background-color: #dbbba3;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        nav a {
+            color: rgb(245, 239, 239);
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        .status-check {
+            padding: 50px 20px;
+            background-color: #f9f9f9;
+            text-align: center;
+            max-width: 600px;
+            margin: 50px auto;
+            background-color: rgb(238, 232, 232);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .status-check input {
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 200px;
+        }
+        .btn {
+            background-color: #d17635;
+            color: rgb(26, 8, 8);
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 16px;
+            display: inline-block;
+            cursor: pointer;
+            border: none;
+        }
+        .btn:hover {
+            background-color: #1b0f0f;
+        }
+        .status-result {
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            body { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Toko Nusa Indah</h1>
+        <nav>
+            <a href="index.html">Beranda</a>
+            <a href="#status">Cek Status</a>
+        </nav>
+    </header>
+
+    <section id="status" class="status-check">
+        <h2>Cek Status Pesanan</h2>
+        <p>Masukkan nama Anda untuk melihat laporan dari admin (terima/tidak diterima, status pesanan).</p>
+        <input type="text" id="status-name" placeholder="Nama Lengkap">
+        <button class="btn" onclick="checkStatus()">Cek Status</button>
+        <div id="status-result" class="status-result"></div>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 Toko Nusa Indah. Semua hak dilindungi.</p>
+    </footer>
+
+    <script>
+        // Fungsi cek status pesanan (menggunakan laporan dari admin di localStorage)
+        function checkStatus() {
+            const name = document.getElementById('status-name').value.trim();
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const userOrder = orders.find(order => order.name.toLowerCase() === name.toLowerCase());
+            const result = document.getElementById('status-result');
+            if (userOrder) {
+                let statusMessage = 'Pesanan sedang diproses.';
+                let acceptanceMessage = 'Pesanan belum dikonfirmasi oleh admin.';
+                if (userOrder.status === 'accepted') {
+                    acceptanceMessage = 'Pesanan diterima oleh admin.';
+                    statusMessage = 'Pesanan diterima dan sedang diproses.';
+                } else if (userOrder.status === 'otw') {
+                    acceptanceMessage = 'Pesanan diterima oleh admin.';
+                    statusMessage = 'Pesanan lagi di jalan.';
+                } else if (userOrder.status === 'delivered') {
+                    acceptanceMessage = 'Pesanan diterima oleh admin.';
+                    statusMessage = 'Pesanan sudah sampai.';
+                } else if (userOrder.status === 'not received') {
+                    acceptanceMessage = 'Pesanan tidak diterima oleh admin.';
+                    statusMessage = 'Pesanan ditolak atau tidak dapat diproses.';
+                }
+                let adminNote = userOrder.adminNote ? `<br><strong>Catatan Admin:</strong> ${userOrder.adminNote}` : '';
+                result.innerHTML = `<strong>Laporan Admin:</strong> ${acceptanceMessage}<br><strong>Status Pesanan:</strong> ${statusMessage}${adminNote}`;
+            } else {
+                result.innerHTML = 'Pesanan tidak ditemukan. Pastikan nama sesuai.';
+            }
+        }
+
+        // Polling untuk update real-time (cek setiap 10 detik)
+        setInterval(() => {
+            // Jika ada input nama, refresh status otomatis
+            const name = document.getElementById('status-name').value.trim();
+            if (name) {
+                checkStatus();
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

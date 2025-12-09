@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Toko Nusa Indah</title>
+    <!-- Tambahkan Font Awesome untuk ikon lonceng -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Tambahkan Chart.js untuk grafik -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #d1cfc9;
+            color: #160202;
+            font-size: 14px;
+        }
+        header {
+            background-color: #dbbba3;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        nav a {
+            color: rgb(245, 239, 239);
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        /* Styling untuk lonceng notifikasi */
+        .notification-bell {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: white;
+        }
+        .notification-bell.new {
+            color: red;
+            animation: shake 0.5s infinite;
+        }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(0); }
+            75% { transform: translateX(5px); }
+            100% { transform: translateX(0); }
+        }
+        .admin-panel {
+            padding: 50px 20px;
+            background-color: #f9f9f9;
+            text-align: center;
+        }
+        .notification {
+            background-color: #ffeb3b;
+            color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: bold;
+        }
+        .order-list {
+            list-style: none;
+            padding: 0;
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        .order-item {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .order-details {
+            flex: 1;
+        }
+        .status {
+            font-weight: bold;
+            color: #d17635;
+        }
+        .btn {
+            background-color: #d17635;
+            color: rgb(26, 8, 8);
+            padding: 8px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            margin-left: 10px;
+        }
+        .btn:hover {
+            background-color: #1b0f0f;
+        }
+        .btn.shipped {
+            background-color: #4CAF50;
+        }
+        .btn.accepted {
+            background-color: #FF9800;
+        }
+        .btn.otw {
+            background-color: #2196F3;
+        }
+        .btn.delivered {
+            background-color: #8BC34A;
+        }
+        .btn.not-received {
+            background-color: #f44336;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* Styling untuk laporan penjualan */
+        .sales-report {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .stat {
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #sales-chart {
+            max-width: 100%;
+            height: 300px;
+        }
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            body { font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Admin Panel - Toko Nusa Indah</h1>
+        <nav>
+            <a href="index.html">Kembali ke Beranda</a>
+        </nav>
+        <!-- Ikon lonceng notifikasi -->
+        <i class="fas fa-bell notification-bell" id="notification-bell" title="Lihat Notifikasi"></i>
+    </header>
+
+    <section class="admin-panel">
+        <h2>Daftar Pesanan Pembeli</h2>
+        <div class="notification" id="notification">
+            <strong>Notifikasi:</strong> Ada pesanan baru dari website order!
+        </div>
+        <ul class="order-list" id="order-list">
+            <!-- Pesanan akan ditampilkan di sini -->
+        </ul>
+    </section>
+
+    <!-- Bagian Laporan Penjualan -->
+    <section class="sales-report">
+        <h2>Laporan Penjualan</h2>
+        <div class="stats">
+            <div class="stat">
+                <h3 id="total-orders">0</h3>
+                <p>Total Pesanan</p>
+            </div>
+            <div class="stat">
+                <h3 id="total-products">0</h3>
+                <p>Total Produk Terjual</p>
+            </div>
+        </div>
+        <h3>Grafik Penjualan per Produk</h3>
+        <canvas id="sales-chart"></canvas>
+    </section>
+
+    <!-- Modal untuk Notifikasi -->
+    <div id="notificationModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-notification-modal">&times;</span>
+            <h3>Notifikasi Pesanan Baru</h3>
+            <ul id="notification-list">
+                <!-- Notifikasi akan ditampilkan di sini -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- Modal untuk Cek Pembeli -->
+    <div id="buyerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-buyer-modal">&times;</span>
+            <h3>Detail Pembeli</h3>
+            <p id="buyer-details"></p>
+            <div id="status-buttons">
+                <button class="btn accepted" id="mark-accepted">Terima Pesanan</button>
+                <button class="btn otw" id="mark-otw">OTW</button>
+                <button class="btn delivered" id="mark-delivered">Sampai</button>
+                <button class="btn not-received" id="mark-not-received">Tidak Diterima</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Toko Nusa Indah. Semua hak dilindungi.</p>
+    </footer>
+
+    <script>
+        let lastOrderCount = 0;
+        let salesChart; // Variabel untuk grafik
+        let currentOrderIndex = null; // Untuk menyimpan index pesanan yang sedang dilihat
+
+        function displayOrders() {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const orderList = document.getElementById('order-list');
+            orderList.innerHTML = '';
+            if (orders.length === 0) {
+                orderList.innerHTML = '<li class="order-item">Belum ada pesanan.</li>';
+            } else {
+                orders.forEach((order, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'order-item';
+                    li.innerHTML = `
+                        <div class="order-details">
+                            <strong>Produk:</strong> ${order.product}<br>
+                            <strong>Nama:</strong> ${order.name}<br>
+                            <strong>Jumlah:</strong> ${order.quantity}<br>
+                            <strong>Tanggal:</strong> ${order.date}<br>
+                            <span class="status">Status: ${order.status || 'Pending'}</span>
+                        </div>
+                        <div>
+                            <button class="btn check-buyer" data-index="${index}">Cek Pembeli</button>
+                            <button class="btn shipped" data-index="${index}">Sudah Kirim</button>
+                        </div>
+                    `;
+                    orderList.appendChild(li);
+                });
+            }
+
+            // Notifikasi jika ada pesanan baru
+            if (orders.length > lastOrderCount) {
+                document.getElementById('notification').style.display = 'block';
+                document.getElementById('notification-bell').classList.add('new');
+                setTimeout(() => {
+                    document.getElementById('notification').style.display = 'none';
+                }, 5000); // Sembunyikan notifikasi setelah 5 detik
+                lastOrderCount = orders.length;
+            } else {
+                document.getElementById('notification-bell').classList.remove('new');
+            }
+
+            // Update laporan penjualan
+            updateSalesReport(orders);
+        }
+
+        function updateSalesReport(orders) {
+            // Hitung total pesanan
+            document.getElementById('total-orders').textContent = orders.length;
+
+            // Hitung total produk terjual
+            const totalProducts = orders.reduce((sum, order) => sum + (order.quantity || 1), 0);
+            document.getElementById('total-products').textContent = totalProducts;
+
+            // Hitung penjualan per produk untuk grafik
+            const productSales = {};
+            orders.forEach(order => {
+                const product = order.product;
+                productSales[product] = (productSales[product] || 0) + (order.quantity || 1);
+            });
+
+            const labels = Object.keys(productSales);
+            const data = Object.values(productSales);
+
+            // Buat atau update grafik
+            if (salesChart) {
+                salesChart.destroy();
+            }
+            salesChart = new Chart(document.getElementById('sales-chart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Jumlah Terjual',
+                        data: data,
+                        backgroundColor: '#d17635',
+                        borderColor: '#1b0f0f',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Handle klik lonceng untuk buka modal notifikasi
+        document.getElementById('notification-bell').addEventListener('click', function() {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const notificationList = document.getElementById('notification-list');
+            notificationList.innerHTML = '';
+            orders.forEach((order, index) => {
+                if (order.status === 'pending' || !order.status) {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${order.product}</strong> - ${order.name} (${order.date})`;
+                    li.style.cursor = 'pointer';
+                    li.addEventListener('click', () => {
+                        // Klik notifikasi untuk buka detail pembeli
+                        document.getElementById('buyer-details').innerHTML = `
+                            <strong>Nama:</strong> ${order.name}<br>
+                            <strong>Alamat:</strong> ${order.address}<br>
+                            <strong>Produk:</strong> ${order.product}<br>
+                            <strong>Jumlah:</strong> ${order.quantity}<br>
+                            <strong>Tanggal:</strong> ${order.date}
+                        `;
+                        currentOrderIndex = index;
+                        document.getElementById('buyerModal').style.display = 'block';
+                        document.getElementById('notificationModal').style.display = 'none';
+                    });
+                    notificationList.appendChild(li);
+                }
+            });
+            document.getElementById('notificationModal').style.display = 'block';
+        });
+
+        // Handle klik tombol Cek Pembeli
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('check-buyer')) {
+                const index = e.target.getAttribute('data-index');
+                const orders = JSON.parse(localStorage.getItem('orders')) || [];
+                const order = orders[index];
+                document.getElementById('buyer-details').innerHTML = `
+                    <strong>Nama:</strong> ${order.name}<br>
+                    <strong>Alamat:</strong> ${order.address}<br>
+                    <strong>Produk:</strong> ${order.product}<br>
+                    <strong>Jumlah:</strong> ${order.quantity}<br>
+                    <strong>Tanggal:</strong> ${order.date}
+                `;
+                currentOrderIndex = index;
+                document.getElementById('buyerModal').style.display = 'block';
+            }
+        });
+
+        // Handle klik tombol Sudah Kirim
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('shipped')) {
+                const index = e.target.getAttribute('data-index');
+                const orders = JSON.parse(localStorage.getItem('orders')) || [];
+                orders[index].status = 'shipped';
+                localStorage.setItem('orders', JSON.stringify(orders));
+                displayOrders(); // Refresh daftar
+                alert('Pesanan ditandai sebagai dikirim.');
+            }
+        });
+
+        // Handle klik tombol Terima Pesanan
+        document.getElementById('mark-accepted').addEventListener('click', function() {
+            if (currentOrderIndex !== null) {
+                const orders = JSON.parse(localStorage.getItem('orders')) || [];
+                orders[currentOrderIndex].status = 'accepted';
+                localStorage.setItem('orders', JSON.stringify(orders));
+                document.getElementById('buyerModal').style.display = 'none';
+                displayOrders(); // Refresh daftar
+                alert('Pesanan ditandai sebagai diterima.');
+            }
+        });
+
+        // Handle klik tombol OTW
+        document.getElementById('mark-otw').addEventListener('click', function() {
+            if (currentOrderIndex !== null) {
+                const orders = JSON.parse(localStorage.getItem('orders')) || [];
+                orders[currentOrderIndex].status = 'otw';
+                localStorage.setItem('orders', JSON.stringify(orders));
+                document.getElementById('buyerModal').style.display = 'none';
+                displayOrders(); // Refresh daftar
+                alert('Pesanan ditandai sebagai OTW.');
+            }
+        });
+
+        // Handle klik tombol Sampai
+        document.getElementById('mark-delivered').addEventListener('click', function() {
+            if (currentOrderIndex !== null) {
+                const orders = JSON.parse(localStorage.getItem('orders')) || [];
+                orders[currentOrderIndex].status = 'delivered';
+                localStorage.setItem('orders', JSON.stringify(orders));
+                document.getElementById('buyerModal').style.display = 'none';
+                displayOrders(); // Refresh daftar
+                alert('Pesanan ditandai sebagai sampai.');
+            }
+        });
+
+        // Handle klik tombol Tidak Diterima
+        document.getElementById('mark-not-received').addEventListener('click', function() {
+            if (currentOrderIndex !== null) {
+                const orders = JSON.parse(localStorage.getItem('orders')) || [];
+                orders[currentOrderIndex].status = 'not received';
+                localStorage.setItem('orders', JSON.stringify(orders));
+                document.getElementById('buyerModal').style.display = 'none';
+                displayOrders(); // Refresh daftar
+                alert('Pesanan ditandai sebagai tidak diterima.');
+            }
+        });
+
+        // Tutup modal notifikasi
+        document.getElementById('close-notification-modal').addEventListener('click', function() {
+            document.getElementById('notificationModal').style.display = 'none';
+        });
+
+        // Tutup modal buyer
+        document.getElementById('close-buyer-modal').addEventListener('click', function() {
+            document.getElementById('buyerModal').style.display = 'none';
+        });
+
+        // Tutup modal jika klik di luar
+        window.addEventListener('click', function(e) {
+            if (e.target == document.getElementById('notificationModal')) {
+                document.getElementById('notificationModal').style.display = 'none';
+            }
+            if (e.target == document.getElementById('buyerModal')) {
+                document.getElementById('buyerModal').style.display = 'none';
+            }
+        });
+
+        // Load pesanan awal dan polling untuk notifikasi
+        displayOrders();
+        setInterval(displayOrders, 5000); // Cek setiap 5 detik untuk pesanan baru
+    </script>
+</body>
+</html>
